@@ -1,0 +1,45 @@
+
+name: Build AYAZIeeAi APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Extract Android project
+        run: |
+          unzip -q AYAZIeeAi-Android-source-v2.zip -d source
+          PROJECT_DIR="$(find source -type f -name settings.gradle -print -quit | xargs dirname)"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          test -n "$PROJECT_DIR"
+
+      - name: Build debug APK
+        run: gradle --no-daemon -p "$PROJECT_DIR" :app:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AYAZIeeAi-debug-APK
+          path: source/**/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          
